@@ -198,3 +198,30 @@ export interface Payment {
   paid: boolean;
   in_trial: boolean;
 }
+
+/** A linked calendar (Google Calendar's private iCal address). Read-only. */
+export interface CalendarFeed {
+  id: string;
+  name: string;
+  url: string;
+  space: Space;
+  enabled: boolean;
+  last_synced_at: string | null;
+  last_error: string | null;
+  event_count: number;
+  created_at: string;
+}
+
+/** An event from a linked calendar. */
+export interface CalEvent {
+  id: string;
+  calendar_id: string;
+  title: string;
+  location: string | null;
+  all_day: boolean;
+  starts_at: string;
+  ends_at: string;
+  start_date: string;
+  end_date: string;
+  calendar?: { name: string; space: Space } | null;
+}

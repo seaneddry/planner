@@ -40,6 +40,9 @@ function addDays(iso: string, n: number): string {
 function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
 }
+function klTime(ts: string): string {
+  return new Date(ts).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', hour: '2-digit', minute: '2-digit', hour12: false });
+}
 function nice(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
@@ -71,6 +74,7 @@ interface Facts {
   holidays: { name: string; holiday_on: string }[];
   payments: { name: string; amount: number | null; next_due: string; days_until: number }[];
   doneYesterday: number;
+  events: { title: string; when: string; calendar: string }[];
 }
 
 const ITEM_COLS =
@@ -84,7 +88,7 @@ async function gather(userId: string): Promise<Facts> {
 
   const open = () => admin.from('planner_items').select(ITEM_COLS).eq('user_id', userId).eq('status', 'open');
 
-  const [overdue, dueToday, waiting, nextWeek, ms, leave, hol, settings, pay, done] = await Promise.all([
+  const [overdue, dueToday, waiting, nextWeek, ms, leave, hol, settings, pay, done, ev] = await Promise.all([
     open().lt('due_on', today).order('due_on').limit(15),
     open().eq('due_on', today).order('priority', { ascending: false }).limit(20),
     open().eq('kind', 'follow_up').order('asked_on').limit(15),
@@ -120,6 +124,15 @@ async function gather(userId: string): Promise<Facts> {
       .eq('status', 'done')
       .gte('done_at', `${addDays(today, -1)}T00:00:00+08:00`)
       .lt('done_at', `${today}T00:00:00+08:00`),
+    admin
+      .from('planner_events')
+      .select('title,all_day,starts_at,ends_at,calendar:planner_calendars(name,enabled)')
+      .eq('user_id', userId)
+      .lte('start_date', today)
+      .gte('end_date', today)
+      .order('all_day', { ascending: false })
+      .order('starts_at')
+      .limit(30),
   ]);
 
   const scopes: string[] = settings.data?.holiday_scopes ?? ['national', 'selangor'];
@@ -149,6 +162,13 @@ async function gather(userId: string): Promise<Facts> {
       .filter((p) => !p.paid)
       .map((p) => ({ name: p.name, amount: p.amount, next_due: p.next_due, days_until: p.days_until })),
     doneYesterday: done.count ?? 0,
+    events: ((ev.data ?? []) as unknown as { title: string; all_day: boolean; starts_at: string; ends_at: string; calendar: { name: string; enabled: boolean } | null }[])
+      .filter((e) => e.calendar?.enabled !== false)
+      .map((e) => ({
+        title: e.title,
+        calendar: e.calendar?.name ?? 'Calendar',
+        when: e.all_day ? 'all day' : `${klTime(e.starts_at)}-${klTime(e.ends_at)}`,
+      })),
   };
 }
 
@@ -165,6 +185,11 @@ function factsText(f: Facts): string {
   const out: string[] = [];
   out.push(`Today is ${f.weekday} ${f.today} (Malaysia).`);
   out.push(`Completed yesterday: ${f.doneYesterday}.`);
+  out.push(
+    `\nCALENDAR EVENTS AND MEETINGS TODAY (from Google Calendar, 24h times):\n${
+      f.events.map((e) => `- ${e.when}: ${e.title} [${e.calendar}]`).join('\n') || '- none'
+    }`,
+  );
   out.push(`\nOVERDUE (${f.overdue.length}):\n${f.overdue.map(line).join('\n') || '- none'}`);
   out.push(`\nDUE TODAY (${f.dueToday.length}):\n${f.dueToday.map(line).join('\n') || '- none'}`);
   out.push(
@@ -199,6 +224,7 @@ const SYSTEM = `You write a short morning brief for one person: a project manage
 Write 3 to 5 short sentences of plain text. No markdown, no bullet points, no headings, no greeting line, no sign-off.
 - Lead with what needs attention today: overdue items and anything due today, naming the one or two that matter most (high priority or client-facing first).
 - Mention follow-ups that have waited 3 days or more and suggest a nudge, naming the person.
+- If there are meetings today, say how many and name the first one and any that look important, with times like 10am. Mention when the day is meeting-heavy so tasks need to fit around them.
 - Mention payments due in the next few days, team leave that affects this week, a public holiday coming up, or a milestone close by, only when they exist.
 - End with one sentence suggesting a focus for the day.
 - Use only the facts given. Never invent items, people, dates or amounts. Amounts are in ringgit, written like RM54.90.
@@ -251,6 +277,10 @@ function fallback(f: Facts): string {
   if (stale.length) {
     const w = stale[0];
     s.push(`${w.title} has been waiting ${w.days} days${w.person ? ` on ${w.person.name}` : ''}, so it may need a nudge.`);
+  }
+  const timed = f.events.filter((e) => e.when !== 'all day');
+  if (timed.length) {
+    s.push(`${timed.length} meeting${timed.length === 1 ? '' : 's'} today, starting with ${timed[0].title} at ${timed[0].when.split('-')[0]}.`);
   }
   if (f.payments.length) {
     s.push(`Payments coming up: ${f.payments.slice(0, 3).map((p) => `${p.name} (${p.days_until === 0 ? 'today' : nice(p.next_due)})`).join(', ')}.`);

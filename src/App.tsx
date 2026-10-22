@@ -23,6 +23,7 @@ import { Search } from './screens/Search';
 import { BriefPage } from './screens/BriefPage';
 import { More } from './screens/More';
 import { Settings, Holidays } from './screens/Settings';
+import { Calendars } from './screens/Calendars';
 import { Login } from './screens/Login';
 
 function RequireAuth() {
@@ -103,6 +104,7 @@ const router = createBrowserRouter(
             { path: '/more', element: <More /> },
             { path: '/settings', element: <Settings /> },
             { path: '/settings/holidays', element: <Holidays /> },
+            { path: '/settings/calendars', element: <Calendars /> },
           ],
         },
         { path: '*', element: <Navigate to="/" replace /> },

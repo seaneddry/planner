@@ -24,7 +24,21 @@ account.
 
 Notifications only work from the Home Screen app on iPhone.
 
-## 4. Calendar feed (optional)
+## 4. Link your Google Calendars
+
+Do this once for each calendar (for example your personal Gmail calendar and your work calendar).
+
+1. On a computer, open calendar.google.com, then the gear › **Settings**.
+2. Under **Settings for my calendars**, click the calendar.
+3. In **Integrate calendar**, copy the **Secret address in iCal format**.
+4. In Planner, go to **Settings › Linked calendars**, paste the address, give it a name and choose
+   **Work** or **Personal**, then **Link calendar**.
+
+Events then appear in Today, Upcoming, Calendar and the morning brief, refreshed every 30 minutes
+(or tap **Sync now**). They are read-only; change them in Google Calendar. If a work calendar shows
+no secret address, the Google Workspace admin has turned it off.
+
+## 5. Calendar feed (optional)
 
 **Settings › Calendar feed**:
 
@@ -35,7 +49,7 @@ Notifications only work from the Home Screen app on iPhone.
 Turn on **Hide work details** if your calendar is shared with others. **Make a new link** cuts off
 the old one.
 
-## 5. Morning brief
+## 6. Morning brief
 
 The brief uses the `GEMINI_API_KEY` Edge Function secret, the same one the expense tracker's Ask feature uses, so it works as soon as Ask does. To use
 a different key or model, change the Edge Function secrets `GEMINI_API_KEY` or `BRIEF_MODEL` in

@@ -16,7 +16,7 @@ sidebar layout on a laptop. Installable as an app (PWA) and usable offline.
 | Daily | Today (overdue, due today, waiting on, payments, morning brief, this week), Upcoming (next 30 days with a two-week strip), Calendar (month), Search |
 | Work | Projects (cards with health, milestones, tasks, notes, links), Waiting on, Meeting notes that turn into action items, Team & leave (availability grid), Weekly review (with a copyable status update) |
 | Personal | Errands and Shopping list (grouped by place), Renewals & expiries, Car & home maintenance, Birthdays & occasions, Appointments, Packing lists with templates, upcoming payments from the expense tracker |
-| Everywhere | Quick capture with shortcuts, push reminders, snooze, repeats, subtasks, priority, effort, links, calendar feed (ICS), AI morning brief, offline mode |
+| Everywhere | Google Calendar events (work and personal, read-only), quick capture with shortcuts, push reminders, snooze, repeats, subtasks, priority, effort, links, calendar feed (ICS), AI morning brief, offline mode |
 
 ### Quick capture
 
@@ -48,6 +48,9 @@ to add several items. On a laptop press **N** anywhere to start typing.
 - **Morning brief:** at 8am Malaysia time Gemini writes a short brief from your planner and payments
   and sends it to your phone (`planner-brief`). If Gemini is unavailable a plain summary is used.
 - **Repeats:** ticking off a repeating item creates the next one (database function `planner_complete`).
+- **Google Calendar:** `planner-calsync` reads each linked calendar's private iCal address every
+  30 minutes and shows the events in Today, Upcoming, Calendar and the morning brief. Repeating
+  events, moved or cancelled occurrences and time zones are handled. Read-only.
 - **Calendar feed:** `planner-ics` serves a private, read-only calendar of your dated items, leave,
   holidays, milestones and payments.
 - **Offline:** the last loaded data is kept on the device; changes made offline are queued and sent
@@ -64,7 +67,7 @@ src/
   base.css          design system from my-wardrobe
   app.css           planner components and the laptop layout
 supabase/migrations the planner tables (already applied to the live project)
-supabase/functions  planner-push, planner-brief, planner-ics (already deployed)
+supabase/functions  planner-push, planner-brief, planner-ics, planner-calsync (already deployed)
 ```
 
 ## Develop

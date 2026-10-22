@@ -5,12 +5,14 @@ import { ItemRow } from '../components/ItemRow';
 import { OfflineBanner, PaymentRow, Section, SpaceSwitch } from '../components/Bits';
 import { CaptureBar } from '../components/Capture';
 import { Icon } from '../components/Icon';
+import { EventRow } from '../components/EventRow';
+import { eventsByDay, useEvents } from '../lib/events';
 import { listHolidays, listLeave, listMilestones, listPayments } from '../api';
 import { inSpace, sortItems, useOpenItems } from '../lib/items';
 import { useRefs, useWide } from '../lib/refs';
 import { useQuery } from '../lib/useQuery';
 import { addDays, dateRange, isWeekend, relativeDay, shortDate, todayKL, weekdayShort } from '../lib/dates';
-import type { Holiday, Item, Leave, Milestone, Payment } from '../types';
+import type { CalEvent, Holiday, Item, Leave, Milestone, Payment } from '../types';
 
 interface Day {
   date: string;
@@ -19,6 +21,7 @@ interface Day {
   milestones: Milestone[];
   leave: Leave[];
   holidays: Holiday[];
+  events: CalEvent[];
 }
 
 const DAYS = 30;
@@ -34,13 +37,14 @@ export function Upcoming() {
   const milestones = useQuery(() => listMilestones(), [], 'milestones');
   const leave = useQuery(() => listLeave(today, end), [today], 'leave-30');
   const holidays = useQuery(() => listHolidays(today, end, scopes), [today, scopes.join()], 'holidays-30');
+  const events = useEvents(addDays(today, 1), end, 'events-30');
 
   const showWork = space !== 'personal';
   const showPersonal = space !== 'work';
 
   const { days, later } = useMemo(() => {
     const map = new Map<string, Day>();
-    for (const d of dateRange(addDays(today, 1), end)) map.set(d, { date: d, items: [], payments: [], milestones: [], leave: [], holidays: [] });
+    for (const d of dateRange(addDays(today, 1), end)) map.set(d, { date: d, items: [], payments: [], milestones: [], leave: [], holidays: [], events: [] });
     const laterItems: Item[] = [];
     for (const i of items.data ?? []) {
       if (!i.due_on || !inSpace(i, space)) continue;
@@ -55,12 +59,13 @@ export function Upcoming() {
           if (!isWeekend(d)) map.get(d)?.leave.push(l);
     }
     for (const h of holidays.data ?? []) map.get(h.holiday_on)?.holidays.push(h);
+    for (const [d, list] of eventsByDay(events.data, addDays(today, 1), end, space)) map.get(d)?.events.push(...list);
     for (const d of map.values()) d.items.sort(sortItems);
     return { days: [...map.values()], later: laterItems.sort(sortItems) };
-  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, space, today, end, showWork, showPersonal]);
+  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, events.data, space, today, end, showWork, showPersonal]);
 
   const strip = days.slice(0, 14);
-  const busy = days.filter((d) => d.items.length + d.payments.length + d.milestones.length + d.leave.length + d.holidays.length > 0);
+  const busy = days.filter((d) => d.items.length + d.payments.length + d.milestones.length + d.leave.length + d.holidays.length + d.events.length > 0);
 
   function jump(date: string) {
     document.getElementById(`day-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -85,7 +90,7 @@ export function Upcoming() {
 
         <div className="week-strip" role="list" aria-label="Next two weeks">
           {strip.map((d) => {
-            const count = d.items.length + d.payments.length + d.milestones.length;
+            const count = d.items.length + d.payments.length + d.milestones.length + d.events.length;
             return (
               <button
                 key={d.date}
@@ -137,6 +142,9 @@ export function Upcoming() {
                   <Link key={m.id} to={`/projects/${m.project_id}`} className="info-row info-milestone">
                     <span className="diamond" aria-hidden="true" /> {projectById.get(m.project_id)?.name}: {m.name}
                   </Link>
+                ))}
+                {d.events.map((e) => (
+                  <EventRow key={e.id} event={e} day={d.date} />
                 ))}
                 {d.items.map((i) => (
                   <ItemRow key={i.id} item={i} hideDate />

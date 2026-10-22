@@ -198,6 +198,25 @@ export function Settings() {
             <div className="group-footer">Used when the Work/Personal filter is on All and you don’t type /p or /w.</div>
           </div>
 
+          {/* ------------------------------------------------------- google calendars */}
+          <div className="group">
+            <div className="group-header">Google Calendar</div>
+            <div className="group-body">
+              <Link to="/settings/calendars" className="row">
+                <span className="row-icon">
+                  <Icon name="calendar" size={18} />
+                </span>
+                <span className="row-label">
+                  Linked calendars
+                  <span className="row-sub">Show your work and personal Google Calendar events here</span>
+                </span>
+                <span className="row-chevron">
+                  <Icon name="chevron-right" size={18} />
+                </span>
+              </Link>
+            </div>
+          </div>
+
           {/* ----------------------------------------------------------- calendar feed */}
           <div className="group">
             <div className="group-header">Calendar feed</div>

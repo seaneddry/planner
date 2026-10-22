@@ -4,6 +4,8 @@ import { Screen } from '../components/Screen';
 import { ItemRow } from '../components/ItemRow';
 import { EmptyLine, PaymentRow, Section, SpaceSwitch } from '../components/Bits';
 import { Icon } from '../components/Icon';
+import { EventRow } from '../components/EventRow';
+import { eventsByDay, eventTimeText, useEvents } from '../lib/events';
 import { listHolidays, listLeave, listMilestones, listPayments } from '../api';
 import { inSpace, sortItems, useOpenItems } from '../lib/items';
 import { useRefs, useWide } from '../lib/refs';
@@ -30,6 +32,8 @@ export function Calendar() {
   const milestones = useQuery(() => listMilestones(), [], 'milestones');
   const leave = useQuery(() => listLeave(gridStart, gridEnd), [gridStart, gridEnd]);
   const holidays = useQuery(() => listHolidays(gridStart, gridEnd, scopes), [gridStart, gridEnd, scopes.join()]);
+  const events = useEvents(gridStart, gridEnd, `events-${gridStart}`);
+  const evByDay = useMemo(() => eventsByDay(events.data, gridStart, gridEnd, space), [events.data, gridStart, gridEnd, space]);
 
   const showWork = space !== 'personal';
   const showPersonal = space !== 'work';
@@ -86,6 +90,11 @@ export function Calendar() {
           </div>
           <SpaceSwitch />
         </div>
+        {events.data && events.data.length === 0 && !events.offline ? (
+          <p className="footnote calendars-hint">
+            <Link to="/settings/calendars">Link your Google Calendars</Link> to see meetings and events here.
+          </p>
+        ) : null}
 
         <div className={`cal-layout ${wide ? 'is-wide' : ''}`}>
           <div className="calendar" role="grid" aria-label={monthLabel(month)}>
@@ -99,7 +108,8 @@ export function Calendar() {
             <div className="cal-body">
               {days.map((d) => {
                 const info = byDay.get(d);
-                const n = (info?.items?.length ?? 0) + (info?.pay.length ?? 0);
+                const ev = evByDay.get(d) ?? [];
+                const n = (info?.items?.length ?? 0) + (info?.pay.length ?? 0) + ev.length;
                 const out = d.slice(0, 7) !== month.slice(0, 7);
                 return (
                   <button
@@ -123,7 +133,13 @@ export function Calendar() {
                             ◆ {x.name}
                           </span>
                         ))}
-                        {info?.items?.slice(0, 3).map((i) => (
+                        {ev.slice(0, 3).map((e) => (
+                          <span key={e.id} className={`cal-line cal-line-event ${e.calendar?.space === 'personal' ? 'is-personal' : ''}`}>
+                            {e.all_day ? '' : `${eventTimeText(e, d).split('–')[0]} `}
+                            {e.title}
+                          </span>
+                        ))}
+                        {info?.items?.slice(0, Math.max(0, 3 - ev.length)).map((i) => (
                           <span key={i.id} className={`cal-line ${i.space === 'personal' ? 'is-personal' : ''}`}>
                             {i.title}
                           </span>
@@ -132,7 +148,8 @@ export function Calendar() {
                       </span>
                     ) : (
                       <span className="cal-marks" aria-hidden="true">
-                        {n ? <span className="dot" /> : null}
+                        {ev.length ? <span className="dot dot-event" /> : null}
+                        {n - ev.length ? <span className="dot" /> : null}
                         {info?.leave.length ? <span className="dot dot-leave" /> : null}
                         {info?.ms.length ? <span className="dot dot-ms" /> : null}
                       </span>
@@ -160,13 +177,16 @@ export function Calendar() {
                   <span className="diamond" aria-hidden="true" /> {projectById.get(x.project_id)?.name}: {x.name}
                 </Link>
               ))}
+              {(evByDay.get(selected) ?? []).map((e) => (
+                <EventRow key={e.id} event={e} day={selected} />
+              ))}
               {sel?.items?.map((i) => (
                 <ItemRow key={i.id} item={i} hideDate />
               ))}
               {sel?.pay.map((p) => (
                 <PaymentRow key={p.id} p={p} showDate={false} />
               ))}
-              {!sel ? <EmptyLine>Nothing on this day.</EmptyLine> : null}
+              {!sel && !evByDay.get(selected)?.length ? <EmptyLine>Nothing on this day.</EmptyLine> : null}
             </Section>
           </div>
         </div>

@@ -6,6 +6,8 @@ import { BriefCard, WeekGlance } from '../components/Glance';
 import { EmptyLine, OfflineBanner, PaymentRow, Section, SpaceSwitch } from '../components/Bits';
 import { ErrorNotice } from '../components/States';
 import { Icon } from '../components/Icon';
+import { EventRow } from '../components/EventRow';
+import { eventsByDay, useEvents } from '../lib/events';
 import { listDoneBetween, listPayments } from '../api';
 import { bucketToday, inSpace, useOpenItems } from '../lib/items';
 import { useRefs, useWide } from '../lib/refs';
@@ -19,6 +21,8 @@ export function Today() {
   const items = useOpenItems();
   const done = useQuery(() => listDoneBetween(today, today), [today], `done-${today}`);
   const payments = useQuery(() => listPayments(7), [], 'payments-7');
+  const events = useEvents(today, today, `events-${today}`);
+  const todaysEvents = eventsByDay(events.data, today, today, space).get(today) ?? [];
 
   const b = bucketToday(items.data ?? [], space, today);
   const showPersonal = space !== 'work';
@@ -33,6 +37,14 @@ export function Today() {
         <Section title="Overdue" count={b.overdue.length} tone="danger">
           {b.overdue.map((i) => (
             <ItemRow key={i.id} item={i} showSnooze />
+          ))}
+        </Section>
+      ) : null}
+
+      {todaysEvents.length ? (
+        <Section title="Schedule" count={todaysEvents.length}>
+          {todaysEvents.map((e) => (
+            <EventRow key={e.id} event={e} day={today} />
           ))}
         </Section>
       ) : null}

@@ -4,6 +4,8 @@ import { write } from './lib/outbox';
 import { addDays, todayKL } from './lib/dates';
 import type {
   Brief,
+  CalEvent,
+  CalendarFeed,
   Holiday,
   Item,
   ItemInput,
@@ -17,6 +19,7 @@ import type {
   Project,
   Review,
   Settings,
+  Space,
   Subtask,
 } from './types';
 
@@ -400,6 +403,57 @@ export async function listPayments(days: number): Promise<Payment[]> {
       .lte('next_due', to)
       .order('next_due'),
   ) as Payment[];
+}
+
+// -------------------------------------------------------------- linked calendars
+
+export async function listCalendars(): Promise<CalendarFeed[]> {
+  return check(await supabase.from('planner_calendars').select('*').order('created_at')) as CalendarFeed[];
+}
+
+export async function addCalendar(c: { name: string; url: string; space: Space }): Promise<string> {
+  const id = newId();
+  check(await supabase.from('planner_calendars').insert({ ...c, id, url: c.url.trim() }));
+  return id;
+}
+
+export async function updateCalendar(id: string, patch: Partial<CalendarFeed>): Promise<void> {
+  check(await supabase.from('planner_calendars').update(patch).eq('id', id));
+}
+
+export async function deleteCalendar(id: string): Promise<void> {
+  check(await supabase.from('planner_calendars').delete().eq('id', id));
+}
+
+export interface SyncResult {
+  id: string;
+  name: string;
+  events?: number;
+  error?: string;
+}
+
+/** Reads the calendars now instead of waiting for the half-hourly sync. */
+export async function syncCalendars(calendarId?: string): Promise<SyncResult[]> {
+  const { data, error } = await supabase.functions.invoke('planner-calsync', { body: { action: 'sync', calendar_id: calendarId } });
+  if (error) throw new Error(await functionError(error));
+  const d = data as { results?: SyncResult[]; error?: string };
+  if (d.error) throw new Error(d.error);
+  return d.results ?? [];
+}
+
+/** Events that touch any day from `from` to `to` (inclusive), from enabled calendars. */
+export async function listEvents(from: string, to: string): Promise<CalEvent[]> {
+  const rows = check(
+    await supabase
+      .from('planner_events')
+      .select('id,calendar_id,title,location,all_day,starts_at,ends_at,start_date,end_date,calendar:planner_calendars(name,space,enabled)')
+      .lte('start_date', to)
+      .gte('end_date', from)
+      .order('all_day', { ascending: false })
+      .order('starts_at')
+      .limit(2000),
+  ) as unknown as (CalEvent & { calendar: { name: string; space: Space; enabled: boolean } | null })[];
+  return rows.filter((e) => e.calendar?.enabled !== false);
 }
 
 export const ICS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/planner-ics`;
