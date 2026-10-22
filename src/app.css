@@ -2217,3 +2217,7 @@ a.item-main:active {
   line-height: 1.45;
   resize: vertical;
 }
+
+.cal-sources {
+  margin: -4px 0 16px;
+}

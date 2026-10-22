@@ -14,12 +14,57 @@ import { addDays, addMonths, dateRange, isWeekend, monthLabel, monthStart, relat
 
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+type Sources = { tasks: boolean; events: boolean };
+const SOURCES_KEY = 'calendar-sources';
+
+function loadSources(): Sources {
+  try {
+    const v = JSON.parse(localStorage.getItem(SOURCES_KEY) ?? 'null');
+    if (v && typeof v.tasks === 'boolean' && typeof v.events === 'boolean' && (v.tasks || v.events)) return v;
+  } catch {
+    /* storage unavailable */
+  }
+  return { tasks: true, events: true };
+}
+
+/** Which sources the calendar shows: your planner tasks and/or linked Google Calendar events. */
+function SourceSwitch({ value, onChange }: { value: Sources; onChange: (v: Sources) => void }) {
+  const toggle = (k: keyof Sources) => {
+    const next = { ...value, [k]: !value[k] };
+    if (!next.tasks && !next.events) return; // keep at least one on
+    onChange(next);
+  };
+  const opts: { k: keyof Sources; label: string }[] = [
+    { k: 'tasks', label: 'Tasks' },
+    { k: 'events', label: 'Calendar' },
+  ];
+  return (
+    <div className="chips cal-sources" role="group" aria-label="Show on calendar">
+      {opts.map((o) => (
+        <button key={o.k} className={`chip chip-small ${value[o.k] ? 'chip-on' : ''}`} aria-pressed={value[o.k]} onClick={() => toggle(o.k)}>
+          {value[o.k] ? <Icon name="check" size={14} strokeWidth={2.6} /> : null}
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Calendar() {
   const today = todayKL();
   const wide = useWide();
   const [month, setMonth] = useState(monthStart(today));
   const [selected, setSelected] = useState(today);
   const { space, settings, projectById } = useRefs();
+  const [sources, setSourcesState] = useState<Sources>(loadSources);
+  const setSources = (v: Sources) => {
+    setSourcesState(v);
+    try {
+      localStorage.setItem(SOURCES_KEY, JSON.stringify(v));
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const scopes = settings?.holiday_scopes ?? ['national', 'selangor'];
 
   const gridStart = startOfWeek(month);
@@ -33,7 +78,10 @@ export function Calendar() {
   const leave = useQuery(() => listLeave(gridStart, gridEnd), [gridStart, gridEnd]);
   const holidays = useQuery(() => listHolidays(gridStart, gridEnd, scopes), [gridStart, gridEnd, scopes.join()]);
   const events = useEvents(gridStart, gridEnd, `events-${gridStart}`);
-  const evByDay = useMemo(() => eventsByDay(events.data, gridStart, gridEnd, space), [events.data, gridStart, gridEnd, space]);
+  const evByDay = useMemo(
+    () => (sources.events ? eventsByDay(events.data, gridStart, gridEnd, space) : new Map<string, NonNullable<typeof events.data>>()),
+    [events.data, gridStart, gridEnd, space, sources.events],
+  );
 
   const showWork = space !== 'personal';
   const showPersonal = space !== 'work';
@@ -44,8 +92,8 @@ export function Calendar() {
       if (!m.has(d)) m.set(d, { items: [], pay: [], ms: [], leave: [], hol: [] });
       return m.get(d)!;
     };
-    for (const i of items.data ?? []) if (i.due_on && i.due_on >= gridStart && i.due_on <= gridEnd && inSpace(i, space)) get(i.due_on).items!.push(i);
-    if (showPersonal) for (const p of payments.data ?? []) if (!p.paid && p.next_due >= gridStart && p.next_due <= gridEnd) get(p.next_due).pay.push(p);
+    if (sources.tasks) for (const i of items.data ?? []) if (i.due_on && i.due_on >= gridStart && i.due_on <= gridEnd && inSpace(i, space)) get(i.due_on).items!.push(i);
+    if (showPersonal && sources.tasks) for (const p of payments.data ?? []) if (!p.paid && p.next_due >= gridStart && p.next_due <= gridEnd) get(p.next_due).pay.push(p);
     if (showWork) {
       for (const x of milestones.data ?? []) if (x.due_on && x.due_on >= gridStart && x.due_on <= gridEnd) get(x.due_on).ms.push(x);
       for (const l of leave.data ?? []) for (const d of dateRange(l.starts_on, l.ends_on)) if (d >= gridStart && d <= gridEnd && !isWeekend(d)) get(d).leave.push(l);
@@ -53,7 +101,7 @@ export function Calendar() {
     for (const h of holidays.data ?? []) get(h.holiday_on).hol.push(h);
     for (const v of m.values()) v.items!.sort(sortItems);
     return m;
-  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, space, gridStart, gridEnd, showWork, showPersonal]);
+  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, space, gridStart, gridEnd, showWork, showPersonal, sources.tasks]);
 
   const sel = byDay.get(selected);
 
@@ -90,6 +138,7 @@ export function Calendar() {
           </div>
           <SpaceSwitch />
         </div>
+        <SourceSwitch value={sources} onChange={setSources} />
         {events.data && events.data.length === 0 && !events.offline ? (
           <p className="footnote calendars-hint">
             <Link to="/settings/calendars">Link your Google Calendars</Link> to see meetings and events here.
