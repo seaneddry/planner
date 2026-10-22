@@ -5,11 +5,12 @@ import { Icon } from '../components/Icon';
 import { EmptyLine, Section } from '../components/Bits';
 import { Empty } from '../components/States';
 import { useToast } from '../components/Toast';
-import { deleteLeave, listHolidays, listLeave, saveLeave, savePerson } from '../api';
+import { ConfirmSheet } from '../components/ConfirmSheet';
+import { deleteLeave, deletePerson, listHolidays, listLeave, saveLeave, savePerson } from '../api';
 import { useRefs, useWide } from '../lib/refs';
 import { errorMessage, useBump, useQuery } from '../lib/useQuery';
 import { addDays, dateRange, isWeekend, shortDate, startOfWeek, todayKL, weekdayShort } from '../lib/dates';
-import type { Leave } from '../types';
+import type { Leave, Person } from '../types';
 
 const KIND_LABEL: Record<Leave['kind'], string> = { annual: 'Annual', medical: 'Medical', training: 'Training', other: 'Other' };
 
@@ -28,6 +29,7 @@ export function Team() {
   const holidays = useQuery(() => listHolidays(start, end, scopes), [start, end, scopes.join()]);
   const [sheet, setSheet] = useState<Partial<Leave> | null>(null);
   const [newName, setNewName] = useState('');
+  const [member, setMember] = useState<Person | null>(null);
 
   const team = people.filter((p) => p.is_team);
   const holidayOn = new Map((holidays.data ?? []).map((h) => [h.holiday_on, h.name]));
@@ -37,7 +39,7 @@ export function Team() {
   }
 
   const outCount = (d: string) => team.filter((p) => leaveFor(p.id, d)).length;
-  const upcoming = (leave.data ?? []).filter((l) => l.ends_on >= today).sort((a, b) => (a.starts_on < b.starts_on ? -1 : 1));
+  const upcoming = (leave.data ?? []).filter((l) => l.ends_on >= today && team.some((p) => p.id === l.person_id)).sort((a, b) => (a.starts_on < b.starts_on ? -1 : 1));
 
   async function addMember() {
     const name = newName.trim();
@@ -119,7 +121,9 @@ export function Team() {
                   {team.map((p) => (
                     <tr key={p.id}>
                       <th scope="row" className="avail-name">
-                        {p.name}
+                        <button className="avail-name-button" onClick={() => setMember(p)} aria-label={`Rename or remove ${p.name}`}>
+                          {p.name}
+                        </button>
                       </th>
                       {days.map((d) => {
                         const l = leaveFor(p.id, d);
@@ -154,7 +158,7 @@ export function Team() {
                 </tbody>
               </table>
             </div>
-            <p className="footnote">Tap a cell to add or change leave.</p>
+            <p className="footnote">Tap a cell to add or change leave. Tap a name to rename or remove them.</p>
           </>
         ) : null}
 
@@ -188,6 +192,7 @@ export function Team() {
         </div>
       </main>
 
+      {member ? <MemberSheet person={member} onClose={() => setMember(null)} onSaved={() => { setMember(null); bump(); leave.reload(); }} /> : null}
       {sheet ? <LeaveSheet leave={sheet} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); bump(); leave.reload(); }} /> : null}
     </Screen>
   );
@@ -306,5 +311,121 @@ function LeaveSheet({ leave, onClose, onSaved }: { leave: Partial<Leave>; onClos
         </div>
       </div>
     </div>
+  );
+}
+
+/** Rename a team member, take them off the team, or delete them entirely. */
+function MemberSheet({ person, onClose, onSaved }: { person: Person; onClose: () => void; onSaved: () => void }) {
+  const { people } = useRefs();
+  const toast = useToast();
+  const [name, setName] = useState(person.name);
+  const [handle, setHandle] = useState(person.handle ?? '');
+  const [confirm, setConfirm] = useState<'remove' | 'delete' | null>(null);
+
+  const cleanHandle = handle.trim().toLowerCase().replace(/^@/, '');
+  const handleBad = cleanHandle !== '' && !/^[a-z0-9_.-]+$/.test(cleanHandle);
+  const handleTaken = cleanHandle !== '' && people.some((p) => p.handle === cleanHandle && p.id !== person.id);
+  const valid = name.trim() !== '' && !handleBad && !handleTaken;
+
+  async function save() {
+    if (!valid) return;
+    try {
+      await savePerson({ id: person.id, name: name.trim(), handle: cleanHandle || null });
+      toast('Saved');
+      onSaved();
+    } catch (e) {
+      toast(errorMessage(e));
+    }
+  }
+
+  async function removeFromTeam() {
+    try {
+      await savePerson({ id: person.id, name: person.name, is_team: false });
+      toast(`${person.name} removed from the team`);
+      onSaved();
+    } catch (e) {
+      toast(errorMessage(e));
+    }
+  }
+
+  async function removeEntirely() {
+    try {
+      await deletePerson(person.id);
+      toast(`${person.name} deleted`);
+      onSaved();
+    } catch (e) {
+      toast(errorMessage(e));
+    }
+  }
+
+  return (
+    <>
+      <div className="sheet-backdrop" onClick={onClose}>
+        <div className="sheet" role="dialog" aria-modal="true" aria-label="Team member" onClick={(e) => e.stopPropagation()}>
+          <div className="sheet-grabber" aria-hidden="true" />
+          <div className="sheet-head">
+            <button className="nav-button" onClick={onClose}>
+              Cancel
+            </button>
+            <h2>Team member</h2>
+            <button className="nav-button nav-button-strong" onClick={() => void save()} disabled={!valid}>
+              Save
+            </button>
+          </div>
+          <div className="sheet-body">
+            <div className="group">
+              <div className="group-body">
+                <label className="row-input">
+                  <span className="row-label">Name</span>
+                  <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void save()} />
+                </label>
+                <label className="row-input">
+                  <span className="row-label">Handle</span>
+                  <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Optional" autoCapitalize="none" autoCorrect="off" />
+                </label>
+              </div>
+              <div className="group-footer">
+                {handleTaken
+                  ? 'Someone else already uses this handle.'
+                  : handleBad
+                    ? 'Use letters, numbers, dots, dashes or underscores.'
+                    : `Type @${cleanHandle || 'handle'} in quick capture to link them.`}
+              </div>
+            </div>
+            <div className="group">
+              <div className="group-body">
+                <button className="row row-center" onClick={() => setConfirm('remove')}>
+                  Remove from team
+                </button>
+                <button className="row row-center row-danger" onClick={() => setConfirm('delete')}>
+                  Delete person
+                </button>
+              </div>
+              <div className="group-footer">
+                Remove from team hides them from the grid and brief but keeps them for @mentions and follow-ups. Delete also erases their leave and unlinks
+                their tasks.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {confirm === 'remove' ? (
+        <ConfirmSheet
+          title={`Take ${person.name} off the team? Their tasks and past leave are kept.`}
+          confirmLabel="Remove from team"
+          onConfirm={() => void removeFromTeam()}
+          onCancel={() => setConfirm(null)}
+        />
+      ) : null}
+      {confirm === 'delete' ? (
+        <ConfirmSheet
+          title={`Delete ${person.name}? Their leave is erased and their tasks lose the link to them. This cannot be undone.`}
+          confirmLabel="Delete person"
+          danger
+          onConfirm={() => void removeEntirely()}
+          onCancel={() => setConfirm(null)}
+        />
+      ) : null}
+    </>
   );
 }
