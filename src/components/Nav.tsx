@@ -1,6 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './Icon';
-import { useCapture } from './Capture';
 import { useRefs } from '../lib/refs';
 import { countBadges, useOpenItems } from '../lib/items';
 import { KINDS } from '../lib/labels';
@@ -17,9 +16,19 @@ export const PERSONAL_LISTS: { kind: ItemKind; path: string }[] = [
 
 const cls = ({ isActive }: { isActive: boolean }) => `side-link ${isActive ? 'active' : ''}`;
 
+/** The + button opens the full new-task screen, pre-filled from the current project or list. */
+function newItemPath(pathname: string): string {
+  const project = pathname.match(/^\/projects\/([^/]+)$/);
+  if (project && project[1] !== 'new') return `/item/new?project=${project[1]}`;
+  const list = pathname.match(/^\/lists\/([^/]+)$/);
+  if (list) return `/item/new?kind=${list[1]}`;
+  return '/item/new';
+}
+
 /** Bottom tab bar on phones. */
 export function TabBar() {
-  const capture = useCapture();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const items = useOpenItems();
   const { due } = countBadges(items.data);
   return (
@@ -35,7 +44,7 @@ export function TabBar() {
         <Icon name="list" />
         <span>Upcoming</span>
       </NavLink>
-      <button className="tab tab-add" onClick={() => capture()} aria-label="Quick capture">
+      <button className="tab tab-add" onClick={() => navigate(newItemPath(pathname))} aria-label="New task">
         <span className="tab-add-button">
           <Icon name="plus" size={26} strokeWidth={2.4} />
         </span>
