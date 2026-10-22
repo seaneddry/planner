@@ -14,29 +14,26 @@ import { addDays, addMonths, dateRange, isWeekend, monthLabel, monthStart, relat
 
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-type Sources = { tasks: boolean; events: boolean };
+type Sources = { tasks: boolean; events: boolean; leave: boolean };
 const SOURCES_KEY = 'calendar-sources';
 
 function loadSources(): Sources {
   try {
     const v = JSON.parse(localStorage.getItem(SOURCES_KEY) ?? 'null');
-    if (v && typeof v.tasks === 'boolean' && typeof v.events === 'boolean' && (v.tasks || v.events)) return v;
+    if (v && typeof v === 'object') return { tasks: v.tasks !== false, events: v.events !== false, leave: v.leave !== false };
   } catch {
     /* storage unavailable */
   }
-  return { tasks: true, events: true };
+  return { tasks: true, events: true, leave: true };
 }
 
-/** Which sources the calendar shows: your planner tasks and/or linked Google Calendar events. */
+/** Which sources the calendar shows: planner tasks, linked Google Calendar events, team leave. Any mix, including none. */
 function SourceSwitch({ value, onChange }: { value: Sources; onChange: (v: Sources) => void }) {
-  const toggle = (k: keyof Sources) => {
-    const next = { ...value, [k]: !value[k] };
-    if (!next.tasks && !next.events) return; // keep at least one on
-    onChange(next);
-  };
+  const toggle = (k: keyof Sources) => onChange({ ...value, [k]: !value[k] });
   const opts: { k: keyof Sources; label: string }[] = [
     { k: 'tasks', label: 'Tasks' },
     { k: 'events', label: 'Calendar' },
+    { k: 'leave', label: 'Leave' },
   ];
   return (
     <div className="chips cal-sources" role="group" aria-label="Show on calendar">
@@ -96,12 +93,12 @@ export function Calendar() {
     if (showPersonal && sources.tasks) for (const p of payments.data ?? []) if (!p.paid && p.next_due >= gridStart && p.next_due <= gridEnd) get(p.next_due).pay.push(p);
     if (showWork) {
       for (const x of milestones.data ?? []) if (x.due_on && x.due_on >= gridStart && x.due_on <= gridEnd) get(x.due_on).ms.push(x);
-      for (const l of leave.data ?? []) for (const d of dateRange(l.starts_on, l.ends_on)) if (d >= gridStart && d <= gridEnd && !isWeekend(d)) get(d).leave.push(l);
+      if (sources.leave) for (const l of leave.data ?? []) for (const d of dateRange(l.starts_on, l.ends_on)) if (d >= gridStart && d <= gridEnd && !isWeekend(d)) get(d).leave.push(l);
     }
     for (const h of holidays.data ?? []) get(h.holiday_on).hol.push(h);
     for (const v of m.values()) v.items!.sort(sortItems);
     return m;
-  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, space, gridStart, gridEnd, showWork, showPersonal, sources.tasks]);
+  }, [items.data, payments.data, milestones.data, leave.data, holidays.data, space, gridStart, gridEnd, showWork, showPersonal, sources.tasks, sources.leave]);
 
   const sel = byDay.get(selected);
 
