@@ -417,6 +417,13 @@ export async function addCalendar(c: { name: string; url: string; space: Space }
   return id;
 }
 
+/** A calendar filled by an Apps Script running in that Google account. Returns its id. */
+export async function addPushCalendar(c: { name: string; space: Space; push_key: string }): Promise<string> {
+  const id = newId();
+  check(await supabase.from('planner_calendars').insert({ ...c, id, source: 'push' }));
+  return id;
+}
+
 export async function updateCalendar(id: string, patch: Partial<CalendarFeed>): Promise<void> {
   check(await supabase.from('planner_calendars').update(patch).eq('id', id));
 }

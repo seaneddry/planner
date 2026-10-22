@@ -50,7 +50,9 @@ to add several items. On a laptop press **N** anywhere to start typing.
 - **Repeats:** ticking off a repeating item creates the next one (database function `planner_complete`).
 - **Google Calendar:** `planner-calsync` reads each linked calendar's private iCal address every
   30 minutes and shows the events in Today, Upcoming, Calendar and the morning brief. Repeating
-  events, moved or cancelled occurrences and time zones are handled. Read-only.
+  events, moved or cancelled occurrences and time zones are handled. Read-only. Work calendars
+  without a secret address use a Google Apps Script that pushes events to `planner-calpush` as soon
+  as the calendar changes (see docs/SETUP.md).
 - **Calendar feed:** `planner-ics` serves a private, read-only calendar of your dated items, leave,
   holidays, milestones and payments.
 - **Offline:** the last loaded data is kept on the device; changes made offline are queued and sent
@@ -67,7 +69,7 @@ src/
   base.css          design system from my-wardrobe
   app.css           planner components and the laptop layout
 supabase/migrations the planner tables (already applied to the live project)
-supabase/functions  planner-push, planner-brief, planner-ics, planner-calsync (already deployed)
+supabase/functions  planner-push, planner-brief, planner-ics, planner-calsync, planner-calpush (already deployed)
 ```
 
 ## Develop

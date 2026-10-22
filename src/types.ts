@@ -203,7 +203,10 @@ export interface Payment {
 export interface CalendarFeed {
   id: string;
   name: string;
-  url: string;
+  /** "ical": read from a secret address. "push": sent by an Apps Script in that Google account. */
+  source: 'ical' | 'push';
+  url: string | null;
+  push_key: string | null;
   space: Space;
   enabled: boolean;
   last_synced_at: string | null;

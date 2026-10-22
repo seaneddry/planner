@@ -36,7 +36,20 @@ Do this once for each calendar (for example your personal Gmail calendar and you
 
 Events then appear in Today, Upcoming, Calendar and the morning brief, refreshed every 30 minutes
 (or tap **Sync now**). They are read-only; change them in Google Calendar. If a work calendar shows
-no secret address, the Google Workspace admin has turned it off.
+no secret address, the Google Workspace admin has turned it off; use the Apps Script route below.
+
+### Work calendar without a secret address (Apps Script)
+
+1. In Planner, **Settings › Linked calendars › Add a calendar**, choose **Apps Script**, name it
+   (say "Work") and tap **Create and show setup**.
+2. On a computer signed in to the work Google account, open script.google.com › **New project**,
+   delete the sample code and paste the script (**Copy script** in Planner).
+3. Save, pick **setup** in the function list and press **Run**, then allow access.
+
+The script sends the calendar's events whenever the calendar changes (usually within a minute) and
+checks again every 15 minutes. Declined meetings are left out. To stop it, run **removeTriggers** in
+the script or delete the project; removing the calendar in Planner also turns its key off.
+[docs/apps-script.gs](apps-script.gs) is a reference copy of the script.
 
 ## 5. Calendar feed (optional)
 

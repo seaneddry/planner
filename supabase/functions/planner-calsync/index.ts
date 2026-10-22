@@ -4,6 +4,7 @@
 // Two ways in:
 //  - The cron job every 30 minutes (header x-cron-secret): action "run" syncs every enabled calendar.
 //  - A signed-in user: action "sync" syncs that user's calendars (or one, with calendar_id).
+// Calendars that push their own events (Apps Script, see planner-calpush) are skipped here.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { parseFeed } from './parse.ts';
 
@@ -89,7 +90,7 @@ Deno.serve(async (req: Request) => {
       const { data: cfg } = await admin.from('push_config').select('cron_secret').eq('id', 1).single();
       if (!cfg || secret !== cfg.cron_secret) return json({ error: 'Unauthorized' }, 401);
       if (body.action !== 'run') return json({ error: 'Unknown action' }, 400);
-      const { data: cals } = await admin.from('planner_calendars').select('id,user_id,name,url').eq('enabled', true);
+      const { data: cals } = await admin.from('planner_calendars').select('id,user_id,name,url').eq('enabled', true).eq('source', 'ical');
       const results = [];
       for (const c of (cals ?? []) as Cal[]) results.push(await syncOne(c));
       return json({ calendars: results.length, failed: results.filter((r) => r.error).length });
@@ -100,7 +101,7 @@ Deno.serve(async (req: Request) => {
     if (authError || !auth.user) return json({ error: 'Unauthorized' }, 401);
     if (body.action !== 'sync') return json({ error: 'Unknown action' }, 400);
 
-    let q = admin.from('planner_calendars').select('id,user_id,name,url').eq('user_id', auth.user.id);
+    let q = admin.from('planner_calendars').select('id,user_id,name,url').eq('user_id', auth.user.id).eq('source', 'ical');
     if (body.calendar_id) q = q.eq('id', body.calendar_id);
     else q = q.eq('enabled', true);
     const { data: cals, error } = await q;

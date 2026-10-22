@@ -2156,3 +2156,45 @@ a.item-main:active {
     min-height: 48px;
   }
 }
+
+/* ------------------------------------------------------- Apps Script calendar setup */
+
+.method-switch {
+  display: grid;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.script-sheet {
+  max-width: 640px;
+}
+
+.setup-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.setup-steps .button-row {
+  margin-top: 8px;
+}
+
+.script-box {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
