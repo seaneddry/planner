@@ -2221,3 +2221,28 @@ a.item-main:active {
 .cal-sources {
   margin: -4px 0 16px;
 }
+
+/* Project link folders */
+.link-folder-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.link-folder-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.link-folder-select {
+  flex: 0 1 180px;
+}
+
+.action:disabled {
+  opacity: 0.4;
+}

@@ -19,6 +19,14 @@ export type Rag = 'green' | 'amber' | 'red';
 export interface Link {
   label: string;
   url: string;
+  /** Id of the project link folder this link sits in (project links only). */
+  group?: string | null;
+}
+
+/** A named folder for a project's links. */
+export interface LinkGroup {
+  id: string;
+  name: string;
 }
 
 export interface ProjectRef {
@@ -87,6 +95,7 @@ export interface Project {
   phase: string | null;
   summary: string | null;
   links: Link[];
+  link_groups: LinkGroup[];
   sort: number;
   created_at: string;
 }
