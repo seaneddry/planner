@@ -2246,3 +2246,7 @@ a.item-main:active {
 .action:disabled {
   opacity: 0.4;
 }
+
+.link-edit {
+  border-radius: 0;
+}
