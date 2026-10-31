@@ -7,6 +7,7 @@ import { ToastProvider } from './components/Toast';
 import { DataProvider } from './lib/useQuery';
 import './base.css';
 import './app.css';
+import './glass.css';
 
 registerSW({ immediate: true });
 

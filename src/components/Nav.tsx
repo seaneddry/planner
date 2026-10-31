@@ -25,38 +25,39 @@ function newItemPath(pathname: string): string {
   return '/item/new';
 }
 
-/** Bottom tab bar on phones. */
+/** Floating glass capsule with the four main screens, plus a round glass + button (as in Garage). */
 export function TabBar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const items = useOpenItems();
   const { due } = countBadges(items.data);
+  const tab = ({ isActive }: { isActive: boolean }) => `tab ${isActive ? 'active' : ''}`;
   return (
     <nav className="tabbar" aria-label="Main">
-      <NavLink to="/" end className={({ isActive }) => `tab ${isActive ? 'active' : ''}`} aria-label={due ? `Today, ${due} due` : 'Today'}>
-        <span className="tab-icon">
-          <Icon name="circle-check" />
-          {due > 0 ? <span className="tab-badge">{due}</span> : null}
-        </span>
-        <span>Today</span>
-      </NavLink>
-      <NavLink to="/upcoming" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-        <Icon name="list" />
-        <span>Upcoming</span>
-      </NavLink>
-      <button className="tab tab-add" onClick={() => navigate(newItemPath(pathname))} aria-label="New task">
-        <span className="tab-add-button">
-          <Icon name="plus" size={26} strokeWidth={2.4} />
-        </span>
+      <div className="tab-capsule">
+        <NavLink to="/" end className={tab} aria-label={due ? `Today, ${due} due` : 'Today'}>
+          <span className="tab-icon">
+            <Icon name="circle-check" />
+            {due > 0 ? <span className="tab-badge">{due}</span> : null}
+          </span>
+          <span>Today</span>
+        </NavLink>
+        <NavLink to="/upcoming" className={tab}>
+          <Icon name="list" />
+          <span>Upcoming</span>
+        </NavLink>
+        <NavLink to="/projects" className={tab}>
+          <Icon name="folder" />
+          <span>Projects</span>
+        </NavLink>
+        <NavLink to="/more" className={tab}>
+          <Icon name="grid" />
+          <span>More</span>
+        </NavLink>
+      </div>
+      <button className="tab-fab" onClick={() => navigate(newItemPath(pathname))} aria-label="New task">
+        <Icon name="plus" size={26} strokeWidth={2.4} />
       </button>
-      <NavLink to="/projects" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-        <Icon name="folder" />
-        <span>Projects</span>
-      </NavLink>
-      <NavLink to="/more" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-        <Icon name="grid" />
-        <span>More</span>
-      </NavLink>
     </nav>
   );
 }
