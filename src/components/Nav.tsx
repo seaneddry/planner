@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './Icon';
 import { useRefs } from '../lib/refs';
@@ -13,6 +14,36 @@ export const PERSONAL_LISTS: { kind: ItemKind; path: string }[] = [
   { kind: 'occasion', path: '/lists/occasion' },
   { kind: 'appointment', path: '/lists/appointment' },
 ];
+
+/** Sidebar sections the user has collapsed, remembered on this device. */
+function useCollapsed(key: string): [boolean, () => void] {
+  const storeKey = `planner.side.${key}.collapsed`;
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(storeKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(storeKey, c ? '0' : '1');
+      } catch {
+        /* storage unavailable */
+      }
+      return !c;
+    });
+  return [collapsed, toggle];
+}
+
+function Chevron({ collapsed }: { collapsed: boolean }) {
+  return (
+    <span className={`side-chevron ${collapsed ? 'is-collapsed' : ''}`} aria-hidden="true">
+      <Icon name="chevron-down" size={14} strokeWidth={2.4} />
+    </span>
+  );
+}
 
 const cls = ({ isActive }: { isActive: boolean }) => `side-link ${isActive ? 'active' : ''}`;
 
@@ -71,6 +102,9 @@ export function Sidebar() {
   const openByProject = new Map<string, number>();
   for (const i of items.data ?? []) if (i.project_id) openByProject.set(i.project_id, (openByProject.get(i.project_id) ?? 0) + 1);
   const active = projects.filter((p) => p.status !== 'done');
+  const projectTotal = active.reduce((n, p) => n + (openByProject.get(p.id) ?? 0), 0);
+  const [projectsCollapsed, toggleProjects] = useCollapsed('projects');
+  const [personalCollapsed, togglePersonal] = useCollapsed('personal');
 
   return (
     <nav className="sidebar" aria-label="Main">
@@ -117,11 +151,22 @@ export function Sidebar() {
       </div>
 
       <div className="side-group">
-        <NavLink to="/projects" end className={({ isActive }) => `side-heading ${isActive ? 'active' : ''}`}>
-          Projects
-        </NavLink>
-        {active.length === 0 ? <div className="side-empty">No projects yet</div> : null}
-        {active.map((p) => (
+        <div className="side-heading-row">
+          <NavLink to="/projects" end className={({ isActive }) => `side-heading ${isActive ? 'active' : ''}`}>
+            Projects
+          </NavLink>
+          {projectsCollapsed && projectTotal ? <span className="side-count">{projectTotal}</span> : null}
+          <button
+            className="side-toggle"
+            onClick={toggleProjects}
+            aria-expanded={!projectsCollapsed}
+            aria-label={projectsCollapsed ? 'Show projects' : 'Hide projects'}
+          >
+            <Chevron collapsed={projectsCollapsed} />
+          </button>
+        </div>
+        {projectsCollapsed ? null : active.length === 0 ? <div className="side-empty">No projects yet</div> : null}
+        {(projectsCollapsed ? [] : active).map((p) => (
           <NavLink key={p.id} to={`/projects/${p.id}`} className={cls}>
             <span className={`rag-dot rag-${p.rag ?? 'none'}`} aria-hidden="true" />
             <span className="side-label">{p.name}</span>
@@ -131,17 +176,26 @@ export function Sidebar() {
       </div>
 
       <div className="side-group">
-        <div className="side-heading">Personal</div>
-        {PERSONAL_LISTS.map((l) => (
-          <NavLink key={l.kind} to={l.path} className={cls}>
-            <Icon name={KINDS[l.kind].icon} size={18} />
-            <span className="side-label">{KINDS[l.kind].plural}</span>
-          </NavLink>
-        ))}
-        <NavLink to="/packing" className={cls}>
-          <Icon name="suitcase" size={18} />
-          <span className="side-label">Packing lists</span>
-        </NavLink>
+        <button className="side-heading-row side-heading-button" onClick={togglePersonal} aria-expanded={!personalCollapsed}>
+          <span className="side-heading">Personal</span>
+          <span className="side-toggle">
+            <Chevron collapsed={personalCollapsed} />
+          </span>
+        </button>
+        {personalCollapsed ? null : (
+          <>
+            {PERSONAL_LISTS.map((l) => (
+              <NavLink key={l.kind} to={l.path} className={cls}>
+                <Icon name={KINDS[l.kind].icon} size={18} />
+                <span className="side-label">{KINDS[l.kind].plural}</span>
+              </NavLink>
+            ))}
+            <NavLink to="/packing" className={cls}>
+              <Icon name="suitcase" size={18} />
+              <span className="side-label">Packing lists</span>
+            </NavLink>
+          </>
+        )}
       </div>
 
       <div className="side-group side-bottom">

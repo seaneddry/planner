@@ -1901,6 +1901,55 @@ a.item-main:active {
     color: var(--ink);
   }
 
+  .side-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 4px;
+  }
+  .side-heading-row .side-heading {
+    flex: 1;
+    min-width: 0;
+  }
+  .side-heading-row .side-count {
+    margin-right: 2px;
+  }
+  .side-heading-button {
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .side-heading-button:hover .side-heading {
+    color: var(--ink);
+  }
+  .side-toggle {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 13px;
+    background: none;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .side-toggle:hover,
+  .side-heading-button:hover .side-toggle {
+    background: var(--fill);
+    color: var(--ink);
+  }
+  .side-chevron {
+    display: grid;
+    transition: transform 180ms var(--ease);
+  }
+  .side-chevron.is-collapsed {
+    transform: rotate(-90deg);
+  }
+
   .side-link {
     display: flex;
     align-items: center;
