@@ -1916,7 +1916,12 @@ a.item-main:active {
   }
   .side-heading-button {
     width: 100%;
+    margin: 0;
+    padding: 0 4px 0 0;
     border: 0;
+    color: inherit;
+    -webkit-appearance: none;
+    appearance: none;
     background: none;
     font: inherit;
     text-align: left;
