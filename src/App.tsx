@@ -24,6 +24,7 @@ import { BriefPage } from './screens/BriefPage';
 import { More } from './screens/More';
 import { Settings, Holidays } from './screens/Settings';
 import { Calendars } from './screens/Calendars';
+import { TaskLinks } from './screens/TaskLinks';
 import { Login } from './screens/Login';
 
 function RequireAuth() {
@@ -105,6 +106,7 @@ const router = createBrowserRouter(
             { path: '/settings', element: <Settings /> },
             { path: '/settings/holidays', element: <Holidays /> },
             { path: '/settings/calendars', element: <Calendars /> },
+            { path: '/settings/tasks', element: <TaskLinks /> },
           ],
         },
         { path: '*', element: <Navigate to="/" replace /> },

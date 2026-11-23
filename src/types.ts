@@ -67,13 +67,20 @@ export interface Item {
   sort: number;
   created_at: string;
   updated_at: string;
+  /** Set when the item was imported from Google Tasks. */
+  gtask_link_id?: string | null;
+  gtask_id?: string | null;
+  gtask_list?: string | null;
+  gtask_status?: string | null;
   project?: ProjectRef | null;
   person?: PersonRef | null;
   subtasks?: { id: string; done: boolean }[];
 }
 
 /** What a create or update sends. Joined fields are left out. */
-export type ItemInput = Partial<Omit<Item, 'project' | 'person' | 'subtasks' | 'created_at' | 'updated_at'>>;
+export type ItemInput = Partial<
+  Omit<Item, 'project' | 'person' | 'subtasks' | 'created_at' | 'updated_at' | 'gtask_link_id' | 'gtask_id' | 'gtask_list' | 'gtask_status'>
+>;
 
 export interface Subtask {
   id: string;
@@ -236,4 +243,17 @@ export interface CalEvent {
   start_date: string;
   end_date: string;
   calendar?: { name: string; space: Space } | null;
+}
+
+/** A Google account whose Google Tasks are imported by an Apps Script (one-way, Google -> Planner). */
+export interface TaskLink {
+  id: string;
+  name: string;
+  space: Space;
+  push_key: string;
+  enabled: boolean;
+  last_synced_at: string | null;
+  last_error: string | null;
+  task_count: number;
+  created_at: string;
 }

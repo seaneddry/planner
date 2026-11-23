@@ -21,6 +21,7 @@ import type {
   Settings,
   Space,
   Subtask,
+  TaskLink,
 } from './types';
 
 function check<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -461,6 +462,28 @@ export async function listEvents(from: string, to: string): Promise<CalEvent[]> 
       .limit(2000),
   ) as unknown as (CalEvent & { calendar: { name: string; space: Space; enabled: boolean } | null })[];
   return rows.filter((e) => e.calendar?.enabled !== false);
+}
+
+// ------------------------------------------------------------- google tasks links
+
+export async function listTaskLinks(): Promise<TaskLink[]> {
+  return check(await supabase.from('planner_task_links').select('*').order('created_at')) as TaskLink[];
+}
+
+/** A Google Tasks link filled by an Apps Script in that Google account. Returns its id. */
+export async function addTaskLink(t: { name: string; space: Space; push_key: string }): Promise<string> {
+  const id = newId();
+  check(await supabase.from('planner_task_links').insert({ ...t, id }));
+  return id;
+}
+
+export async function updateTaskLink(id: string, patch: Partial<TaskLink>): Promise<void> {
+  check(await supabase.from('planner_task_links').update(patch).eq('id', id));
+}
+
+/** Removes the link. Tasks already imported stay as ordinary planner items. */
+export async function deleteTaskLink(id: string): Promise<void> {
+  check(await supabase.from('planner_task_links').delete().eq('id', id));
 }
 
 export const ICS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/planner-ics`;

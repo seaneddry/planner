@@ -51,6 +51,33 @@ checks again every 15 minutes. Declined meetings are left out. To stop it, run *
 the script or delete the project; removing the calendar in Planner also turns its key off.
 [docs/apps-script.gs](apps-script.gs) is a reference copy of the script.
 
+## 4b. Import Google Tasks (Apps Script)
+
+One-way, Google → Planner. New Google tasks become planner tasks; ticking one done in Google ticks it
+in Planner too.
+
+1. In Planner, **Settings › Google › Google Tasks**, name the link (say "Agmo tasks"), choose
+   **Work** or **Personal** and tap **Create and show setup**.
+2. On a computer signed in to that Google account, open script.google.com › **New project**, delete
+   the sample code and paste the script (**Copy script** in Planner).
+3. In the left bar, **Services › +** › **Google Tasks API** › **Add**.
+4. Save, pick **setup** in the function list and press **Run**, then allow access.
+
+The script checks Google every minute and only sends when something changed (plus once an hour as a
+safety net). Rules:
+
+- Only open tasks are imported; ones already done in Google are skipped.
+- Title, notes and due date follow Google whenever the task changes there. Google Tasks only keeps a
+  date, not a time.
+- Done / not done follows Google when it changes there. Ticking a task in Planner is not sent to
+  Google and is not undone by the next check.
+- A task deleted in Google is dropped in Planner. Deleting an imported task in Planner brings it back
+  on the next check; mark it done or drop it instead.
+- Google subtasks become subtasks. A list with the same name as a project files its tasks in that
+  project. Set `LISTS` in the script to send only some lists.
+
+[docs/apps-script-tasks.gs](apps-script-tasks.gs) is a reference copy of the script.
+
 ## 5. Calendar feed (optional)
 
 **Settings › Calendar feed**:

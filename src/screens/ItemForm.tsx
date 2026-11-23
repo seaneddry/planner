@@ -311,6 +311,13 @@ export function ItemForm() {
           </div>
         </div>
 
+        {item?.gtask_id ? (
+          <p className="footnote gtask-note">
+            From Google Tasks{item.gtask_list ? ` · ${item.gtask_list}` : ''}. If you change it in Google, the title, notes, date and done state here
+            update to match. Changes made here aren’t sent back to Google.
+          </p>
+        ) : null}
+
         {editing ? (
           <div className="action-bar">
             <button className={`chip ${isDone ? 'chip-on' : ''}`} onClick={() => void toggleDone()}>

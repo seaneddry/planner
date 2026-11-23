@@ -200,7 +200,7 @@ export function Settings() {
 
           {/* ------------------------------------------------------- google calendars */}
           <div className="group">
-            <div className="group-header">Google Calendar</div>
+            <div className="group-header">Google</div>
             <div className="group-body">
               <Link to="/settings/calendars" className="row">
                 <span className="row-icon">
@@ -209,6 +209,18 @@ export function Settings() {
                 <span className="row-label">
                   Linked calendars
                   <span className="row-sub">Show your work and personal Google Calendar events here</span>
+                </span>
+                <span className="row-chevron">
+                  <Icon name="chevron-right" size={18} />
+                </span>
+              </Link>
+              <Link to="/settings/tasks" className="row">
+                <span className="row-icon">
+                  <Icon name="check" size={18} />
+                </span>
+                <span className="row-label">
+                  Google Tasks
+                  <span className="row-sub">Bring in tasks from Google Tasks, including ones you tick off there</span>
                 </span>
                 <span className="row-chevron">
                   <Icon name="chevron-right" size={18} />

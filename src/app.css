@@ -2250,3 +2250,10 @@ a.item-main:active {
 .link-edit {
   border-radius: 0;
 }
+
+/* ======================================================== Google Tasks */
+
+.gtask-note {
+  margin: -8px 0 0;
+  line-height: 1.4;
+}
