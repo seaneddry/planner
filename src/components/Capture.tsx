@@ -39,9 +39,7 @@ export function CaptureProvider({ children }: { children: ReactNode }) {
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
-        const bar = document.getElementById('capture-bar-input');
-        if (bar) bar.focus();
-        else setOpen({});
+        setOpen({});
       }
     }
     window.addEventListener('keydown', onKey);
@@ -244,60 +242,6 @@ function CaptureSheet({ options, onClose }: { options: CaptureOptions; onClose: 
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Inline capture bar for laptop screens. Press N anywhere to jump into it. */
-export function CaptureBar({ projectId, kind, placeholder }: { projectId?: string | null; kind?: ItemKind; placeholder?: string }) {
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const options = useMemo(() => ({ projectId, kind }), [projectId, kind]);
-  const parsed = useParsed(text, options);
-  const save = useSaver(options);
-
-  async function submit() {
-    if (busy || !text.trim()) return;
-    setBusy(true);
-    const ok = await save(text);
-    setBusy(false);
-    if (ok) setText('');
-  }
-
-  return (
-    <div className={`capture-bar ${text ? 'is-active' : ''}`}>
-      <div className="capture-bar-row">
-        <Icon name="plus" size={18} />
-        <label className="sr-only" htmlFor={projectId || kind ? undefined : 'capture-bar-input'}>
-          Quick capture
-        </label>
-        <input
-          id={projectId || kind ? undefined : 'capture-bar-input'}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void submit();
-            }
-            if (e.key === 'Escape') {
-              setText('');
-              (e.target as HTMLInputElement).blur();
-            }
-          }}
-          onPaste={(e) => {
-            const pasted = e.clipboardData.getData('text');
-            if (pasted.includes('\n')) {
-              e.preventDefault();
-              void save(pasted);
-            }
-          }}
-          placeholder={placeholder ?? 'Add anything… e.g. nudge @client on UAT fri #porsche !high'}
-          autoComplete="off"
-        />
-        {!projectId && !kind ? <kbd className="kbd">N</kbd> : null}
-      </div>
-      {text ? <ParsedPreview parsed={parsed} /> : null}
     </div>
   );
 }

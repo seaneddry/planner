@@ -1,20 +1,19 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { Screen } from '../components/Screen';
 import { ItemRow } from '../components/ItemRow';
-import { CaptureBar } from '../components/Capture';
 import { EmptyLine, OfflineBanner, Section } from '../components/Bits';
 import { useOpenItems, sortItems } from '../lib/items';
 import { KINDS } from '../lib/labels';
 import { addDays, daysBetween, todayKL } from '../lib/dates';
 import type { Item, ItemKind } from '../types';
 
-const HINT: Partial<Record<ItemKind, { placeholder: string; footer: string }>> = {
-  errand: { placeholder: 'Add an errand… e.g. collect parcel +post_office sat', footer: 'Use +place to group errands by where they get done.' },
-  shopping: { placeholder: 'Add to the list… e.g. batteries +mrdiy', footer: 'Use +shop to group the list by store. Paste several lines to add them all.' },
-  renewal: { placeholder: 'Add a renewal… e.g. road tax 1/12', footer: 'Renewals repeat yearly and remind you 2 weeks before. Change either on the item.' },
-  maintenance: { placeholder: 'Add maintenance… e.g. aircond service 24 oct every 6 months', footer: 'Set how often it repeats; the next one is scheduled when you tick it off.' },
-  occasion: { placeholder: "Add an occasion… e.g. Mum's birthday 12 mar", footer: 'Occasions repeat yearly and remind you 3 days before.' },
-  appointment: { placeholder: 'Add an appointment… e.g. dentist 5/11 10am', footer: 'Appointments with a time remind you an hour before.' },
+const HINT: Partial<Record<ItemKind, { footer: string }>> = {
+  errand: { footer: 'Set a place on an errand to group it by where it gets done.' },
+  shopping: { footer: 'Set a shop on an item to group the list by store.' },
+  renewal: { footer: 'Renewals repeat yearly and remind you 2 weeks before. Change either on the item.' },
+  maintenance: { footer: 'Set how often it repeats; the next one is scheduled when you tick it off.' },
+  occasion: { footer: 'Occasions repeat yearly and remind you 3 days before.' },
+  appointment: { footer: 'Appointments with a time remind you an hour before.' },
 };
 
 function groupBy(items: Item[], key: (i: Item) => string): [string, Item[]][] {
@@ -75,7 +74,6 @@ export function KindList() {
     <Screen title={meta.plural} sub="Personal">
       <main className="page">
         <OfflineBanner show={items.offline} />
-        <CaptureBar kind={k} placeholder={hint?.placeholder} />
         {hint ? <p className="footnote capture-hint">{hint.footer}</p> : null}
         <div className="stack-tight">{body}</div>
       </main>

@@ -4,12 +4,12 @@ import { Screen } from '../components/Screen';
 import { Icon } from '../components/Icon';
 import { ItemRow } from '../components/ItemRow';
 import { BackLink, EmptyLine, Section } from '../components/Bits';
-import { CaptureBar, useCapture } from '../components/Capture';
+import { useCapture } from '../components/Capture';
 import { ErrorNotice, Loading } from '../components/States';
 import { useToast } from '../components/Toast';
 import { RagPill } from './Projects';
 import { deleteMilestone, getProject, listMilestones, listNotes, listProjectItems, saveMilestone, saveProject, newId } from '../api';
-import { useRefs, useWide } from '../lib/refs';
+import { useRefs } from '../lib/refs';
 import { errorMessage, useBump, useQuery } from '../lib/useQuery';
 import { longDate, relativeDay, shortDate, todayKL, relativeInline } from '../lib/dates';
 import { sortItems } from '../lib/items';
@@ -19,7 +19,6 @@ type Tab = 'tasks' | 'notes' | 'links';
 
 export function ProjectDetail() {
   const { id = '' } = useParams();
-  const wide = useWide();
   const capture = useCapture();
   const bump = useBump();
   const toast = useToast();
@@ -105,13 +104,9 @@ export function ProjectDetail() {
 
           {tab === 'tasks' ? (
             <>
-              {wide ? (
-                <CaptureBar projectId={p.id} placeholder={`Add to ${p.name}… e.g. send minutes fri !high, or fu @someone`} />
-              ) : (
-                <button className="button button-secondary button-block" onClick={() => capture({ projectId: p.id })}>
-                  <Icon name="plus" size={18} /> Add to {p.name}
-                </button>
-              )}
+              <button className="button button-secondary button-block" onClick={() => capture({ projectId: p.id })}>
+                <Icon name="plus" size={18} /> Add to {p.name}
+              </button>
               {waiting.length ? (
                 <Section title="Waiting on" count={waiting.length}>
                   {waiting.map((i) => (

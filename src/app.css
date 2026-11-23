@@ -729,49 +729,8 @@ a.item-main:active {
 
 /* ============================================================== Quick capture */
 
-.capture-bar {
-  margin: 0 0 18px;
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 160ms ease;
-}
-
-.capture-bar:focus-within {
-  box-shadow: 0 0 0 2px var(--ink-3), var(--shadow-sm);
-}
-
-.capture-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 0 10px 0 14px;
-  color: var(--ink-2);
-}
-
-.capture-bar-row input {
-  flex: 1;
-  min-width: 0;
-  height: 46px;
-  border: 0;
-  outline: none;
-  background: none;
-  color: var(--ink);
-  font: inherit;
-  font-size: 16px;
-}
-
-.capture-bar-row input::placeholder {
-  color: var(--ink-3);
-}
-
-.capture-bar .parsed {
-  padding: 0 14px 12px;
-}
-
 .capture-hint {
-  margin: -10px 0 16px;
+  margin: 0 0 16px;
   padding: 0 4px;
 }
 
@@ -2256,4 +2215,33 @@ a.item-main:active {
 .gtask-note {
   margin: -8px 0 0;
   line-height: 1.4;
+}
+
+/* ===================================================== Upcoming type filter */
+
+.type-filter {
+  flex-wrap: nowrap;
+  margin: -4px -16px 16px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.type-filter::-webkit-scrollbar {
+  display: none;
+}
+.type-filter .chip {
+  flex: none;
+}
+.chip-count {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 900px) {
+  .type-filter {
+    flex-wrap: wrap;
+    margin: -4px 0 16px;
+    padding: 0;
+  }
 }

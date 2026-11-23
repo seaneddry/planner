@@ -86,7 +86,6 @@ body,
 .group-body,
 .kpi,
 .project-card,
-.capture-bar,
 .reflect,
 .week-day,
 .calendar,
@@ -115,13 +114,6 @@ body,
 .avail-scroll,
 .action-preview {
   border-radius: 22px;
-}
-.capture-bar {
-  border-radius: 22px;
-  background: var(--glass-strong);
-}
-.capture-bar:focus-within {
-  box-shadow: var(--glass-hi), var(--shadow-lg);
 }
 .week-day {
   border-radius: 16px;
@@ -273,6 +265,13 @@ body,
 
 /* ------------------------------------------- laptop: floating glass sidebar */
 @media (min-width: 900px) {
+  /* The floating tab bar stays on laptop too, so leave room for it at the bottom. */
+  .page {
+    padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 32px);
+  }
+  .app-shell.is-form .page {
+    padding-bottom: 48px;
+  }
   .sidebar {
     top: 12px;
     height: calc(100dvh - 24px);

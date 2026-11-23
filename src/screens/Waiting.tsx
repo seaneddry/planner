@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Screen } from '../components/Screen';
 import { ItemRow } from '../components/ItemRow';
 import { OfflineBanner, Section, SpaceSwitch } from '../components/Bits';
-import { CaptureBar, useCapture } from '../components/Capture';
+import { useCapture } from '../components/Capture';
 import { Empty } from '../components/States';
 import { Icon } from '../components/Icon';
 import { inSpace, useOpenItems, waitingDays } from '../lib/items';
@@ -65,9 +65,8 @@ export function Waiting() {
           </div>
         </div>
         <OfflineBanner show={items.offline} />
-        {wide ? <CaptureBar kind="follow_up" placeholder="Waiting for… e.g. @client GA4 events list #porsche" /> : null}
         {list.length === 0 && !items.loading ? (
-          <Empty icon="hourglass" title="Not waiting on anyone" text='Add a follow-up with "fu @person what you need". It gets a nudge date 3 days out.' />
+          <Empty icon="hourglass" title="Not waiting on anyone" text="Add a follow-up with the + button. It gets a nudge date 3 days out." />
         ) : null}
         <div className="stack-tight">
           {order

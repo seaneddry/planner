@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Screen } from '../components/Screen';
 import { ItemRow } from '../components/ItemRow';
-import { CaptureBar } from '../components/Capture';
 import { BriefCard, WeekGlance } from '../components/Glance';
 import { EmptyLine, OfflineBanner, PaymentRow, Section, SpaceSwitch } from '../components/Bits';
 import { ErrorNotice } from '../components/States';
@@ -113,7 +112,6 @@ export function Today() {
         </div>
         <OfflineBanner show={items.offline} />
         {items.error && !items.data ? <ErrorNotice message={items.error} onRetry={items.reload} /> : null}
-        {wide ? <CaptureBar /> : null}
 
         {wide ? (
           <div className="two-col">

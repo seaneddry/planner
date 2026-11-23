@@ -22,6 +22,7 @@ function newItemPath(pathname: string): string {
   if (project && project[1] !== 'new') return `/item/new?project=${project[1]}`;
   const list = pathname.match(/^\/lists\/([^/]+)$/);
   if (list) return `/item/new?kind=${list[1]}`;
+  if (pathname === '/waiting') return '/item/new?kind=follow_up';
   return '/item/new';
 }
 
