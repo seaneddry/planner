@@ -15,6 +15,7 @@ export function buildTasksScript(key: string, name: string, url: string = TASKPU
  * First time:
  *   1. In the left bar click "Services" (+), pick "Google Tasks API", click Add.
  *   2. Choose "setup" in the function list above and press Run, then allow access.
+ * Nothing showing up? Choose "diagnose" and press Run to see what the script can read.
  * To stop: choose "removeTriggers" and press Run (or delete this project).
  */
 
@@ -30,7 +31,7 @@ function setup() {
   ScriptApp.newTrigger('sync').timeBased().everyMinutes(EVERY_MINUTES).create();
   const test = post_({ test: true });
   if (!test.ok) throw new Error('Planner did not accept the key: ' + test.error);
-  PropertiesService.getScriptProperties().deleteProperty('lastHash');
+  PropertiesService.getScriptProperties().deleteAllProperties();
   const result = sync();
   Logger.log('Linked to Planner "' + test.link + '". ' + result.tasks + ' open tasks, ' + result.added + ' new.');
 }
@@ -73,35 +74,65 @@ function readTasks_() {
 
   lists.forEach(function (list) {
     if (wanted.length && wanted.indexOf(String(list.title).toLowerCase()) < 0) return;
-    let token;
-    do {
-      const page = Tasks.Tasks.list(list.id, {
-        maxResults: 100,
-        pageToken: token,
-        showCompleted: true,
-        showHidden: true,
-        showDeleted: false,
-        completedMin: doneSince,
+    const seen = {};
+    const add = function (t) {
+      if (seen[t.id]) return;
+      if (!t.title && !t.notes) return; // blank rows Google leaves behind
+      seen[t.id] = true;
+      out.push({
+        id: list.id + '|' + t.id,
+        list: list.title,
+        parent: t.parent ? list.id + '|' + t.parent : null,
+        title: t.title,
+        notes: t.notes || null,
+        due: t.due ? String(t.due).slice(0, 10) : null, // Google keeps the date only
+        status: t.status,
+        completed: t.completed || null,
+        updated: t.updated,
+        position: t.position || '',
       });
-      (page.items || []).forEach(function (t) {
-        if (!t.title && !t.notes) return; // blank rows Google leaves behind
-        out.push({
-          id: list.id + '|' + t.id,
-          list: list.title,
-          parent: t.parent ? list.id + '|' + t.parent : null,
-          title: t.title,
-          notes: t.notes || null,
-          due: t.due ? String(t.due).slice(0, 10) : null, // Google keeps the date only
-          status: t.status,
-          completed: t.completed || null,
-          updated: t.updated,
-          position: t.position || '',
-        });
-      });
-      token = page.nextPageToken;
-    } while (token);
+    };
+    // Open tasks (including ones assigned to you from Docs or Chat).
+    listAll_(list.id, { showCompleted: false, showHidden: false, showAssigned: true }).forEach(add);
+    // Recently completed tasks, so a tick in Google comes across. completedMin only returns completed tasks.
+    listAll_(list.id, { showCompleted: true, showHidden: true, showAssigned: true, completedMin: doneSince })
+      .filter(function (t) { return t.status === 'completed'; })
+      .forEach(add);
   });
   return out;
+}
+
+function listAll_(listId, options) {
+  const all = [];
+  let token;
+  do {
+    const opts = Object.assign({ maxResults: 100, showDeleted: false }, options);
+    if (token) opts.pageToken = token;
+    let page;
+    try {
+      page = Tasks.Tasks.list(listId, opts);
+    } catch (e) {
+      if (!opts.showAssigned) throw e;
+      delete opts.showAssigned; // older API versions don't know this option
+      page = Tasks.Tasks.list(listId, opts);
+    }
+    (page.items || []).forEach(function (t) { all.push(t); });
+    token = page.nextPageToken;
+  } while (token);
+  return all;
+}
+
+/** Run this to see what the script can read from Google Tasks (View > Logs / Execution log). */
+function diagnose() {
+  checkService_();
+  const tasks = readTasks_();
+  const byList = {};
+  tasks.forEach(function (t) {
+    const k = t.list + (t.status === 'completed' ? ' (done)' : ' (open)');
+    byList[k] = (byList[k] || 0) + 1;
+  });
+  Logger.log('Task lists: ' + Tasks.Tasklists.list({ maxResults: 100 }).items.map(function (l) { return l.title; }).join(', '));
+  Logger.log('Tasks found: ' + JSON.stringify(byList));
 }
 
 function removeTriggers() {
